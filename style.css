@@ -18,3 +18,64 @@ a{color:#245fbd;text-underline-offset:3px}.table-wrap{overflow:auto;border:1px s
 .summary{display:flex;gap:12px;margin:20px 0;font-size:15px}.summary span{padding:12px 16px;border:1px solid var(--border);background:#fff;border-radius:4px;font-variant-numeric:tabular-nums}.address{font-family:Consolas,monospace}.browser{max-width:380px;overflow-wrap:anywhere;font-size:12px}
 [hidden]{display:none!important}
 @media(max-width:650px){main{padding:16px}header{gap:12px;padding-bottom:16px}.brand span{font-size:14px}.privacy{max-width:110px;text-align:right;font-size:11px}h1{font-size:24px}.intro{margin-top:24px}.workspace{padding:10px;min-height:340px}#empty{padding:32px 16px}.spacer{display:none}footer{flex-direction:column}.toolbar button,.button{padding:9px 11px}#pages small{width:100%;margin:0;line-height:1.5}.summary{flex-wrap:wrap}}
+
+/* Bright blue and coral theme, shared by the workspace and admin portal. */
+:root {
+  color: #243452;
+  background: #fffaf4;
+  --border: #d2def2;
+  --muted: #526582;
+  --accent: #2359d7;
+}
+main { padding-top: 20px; }
+header {
+  padding: 18px 22px;
+  background: #2359d7;
+  border: 0;
+  border-radius: 12px;
+  box-shadow: 0 4px 12px #2359d71a;
+}
+.brand { color: #ffce88; }
+.brand span { color: #fff; font-weight: 650; }
+.privacy { color: #fff; padding: 7px 10px; background: #ffffff1a; border-radius: 6px; }
+header a { color: #fff; }
+.intro { padding-left: 16px; border-left: 4px solid #ee795c; margin: 28px 0; }
+h1 { color: #234777; font-size: 30px; }
+button, .button { color: #334c74; border-color: #c7d6ec; border-radius: 7px; padding: 10px 15px; font-weight: 600; }
+button:hover:not(:disabled), .button:hover { background: #edf4ff; border-color: #83a9e3; }
+button:disabled { background: #f2f5fa; color: #737f92; border-color: #dce4ef; }
+.primary { color: #174da7; background: #e7efff; border-color: #adc5f3; }
+.primary:hover { color: #174da7; background: #d8e6ff; }
+.dark { background: #c63f29; border-color: #c63f29; color: #fff; }
+.dark:hover:not(:disabled) { background: #ac3320; border-color: #ac3320; }
+#download.primary:enabled { background: #2359d7; border-color: #2359d7; color: #fff; }
+#download.primary:enabled:hover { background: #1949b9; border-color: #1949b9; }
+.workspace {
+  background-color: #edf5ff;
+  background-image: radial-gradient(#b8cdea 1px, transparent 1px);
+  background-size: 16px 16px;
+  background-position: 0 0;
+  border-color: #bfd2ef;
+  border-radius: 12px;
+}
+#empty { border: 1px solid #d0dff5; border-top: 4px solid #ee795c; border-radius: 10px; background: #fff; box-shadow: 0 5px 18px #335b9310; }
+#empty h2 { color: #234777; }
+.empty-icon { color: #2359d7; }
+#stage { box-shadow: 0 3px 12px #274d7825; }
+svg rect { fill: #2359d7; stroke: #2359d7; }
+#pages { background: #fff; border-color: #d2def2; border-radius: 8px; }
+#page-number { color: #174da7; font-weight: 600; }
+footer { padding: 4px 0; }
+a { color: #1b53c2; }
+.table-wrap { border-color: #c8d8ee; border-radius: 10px; }
+th { background: #eaf2ff; color: #315486; }
+td { color: #243452; border-color: #e0e9f5; }
+tbody tr:hover { background: #f3f7ff; }
+.summary span { color: #194da5; background: #eaf2ff; border-color: #bfd3f3; border-radius: 8px; }
+.summary span + span { color: #963d29; background: #fff0e9; border-color: #f2c9b9; }
+@media (max-width: 650px) {
+  header { padding: 14px; }
+  h1 { font-size: 24px; }
+  .intro { padding-left: 12px; }
+  .privacy { padding: 5px 7px; }
+}
