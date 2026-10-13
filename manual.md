@@ -6,6 +6,8 @@ For installation, see [setup.md](setup.md). For design background, see [design.m
 
 ## Start and stop
 
+If IT has provided a shared host address, open that address in your browser, for example `http://192.168.1.25:3210`. The host operator starts/stops the server; you only need the browser. The address must use the real host IP or hostname supplied by IT.
+
 On a prepared Windows computer, open the application folder and double-click **Start.bat**. A terminal window starts the local server and your browser opens at **http://127.0.0.1:3210**. Keep the terminal open while using the app. If the browser opens before the server is ready, refresh the page.
 
 When finished, save your results, close the browser tab and press **Ctrl+C** in the server's terminal window to stop it. The launcher may then ask you to press a key before its window closes.
@@ -79,7 +81,7 @@ Review the actual downloaded file, not only the preview. In particular, confirm 
 
 | Problem | What to do |
 | --- | --- |
-| Browser cannot reach the app | Start the application and keep its terminal open. Check that the address is `http://127.0.0.1:3210`. |
+| Browser cannot reach the app | For local use, start the app and open `http://127.0.0.1:3210`. For shared use, check the host address with IT and confirm the host is running. |
 | Buttons are disabled during loading/export | Wait for the operation to finish and read the status message below the preview. |
 | Download is disabled | Obfuscate the image, or at least one page of a PDF. Drawing rectangles alone does not enable export. |
 | A PDF page remains visible | That page has not been obfuscated, or you returned it to editing mode. Obfuscate that page explicitly. |
@@ -91,6 +93,8 @@ Review the actual downloaded file, not only the preview. In particular, confirm 
 
 ## Concurrent use by a team
 
-Each person can run the app on their own computer at the same time. The same local address works on every computer because it refers to that computer. Your page selections are independent of other people's work, and there is no shared document session.
+Your organisation can run the app on one host computer for everyone. Open the address supplied by IT, for example `http://192.168.1.25:3210`, in your browser; replace the example with the host's real address. You do not need to install Node.js on your own machine when using the shared host. Your documents, page selections and downloads remain independent of other users and stay in your browser. The host's admin portal shows your network address, browser information and connection times, but not document information.
+
+Alternatively, each person can run a local copy on their own computer. In that arrangement, `http://127.0.0.1:3210` refers to their own computer. See the [multiple-user setup instructions](setup.md#shared-host-concurrent-use).
 
 Agree who is responsible for each source document and where completed files are saved. The app does not prevent two people processing the same document or saving results with the same name. Follow the organisation's naming, review and access rules for shared folders.

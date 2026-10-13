@@ -1,6 +1,6 @@
 # Local and organisational setup
 
-This guide is for people installing the application and IT staff distributing it to a team. The supported deployment model is **one local Node.js process per user computer**, with documents processed in that user's browser. See [manual.md](manual.md) for use and [design.md](design.md) for the architecture and history.
+This guide is for people installing the application and IT staff distributing it to a team. The app supports **one shared host serving several users' browsers**, or independent local copies on each workstation. Documents are processed in each user's browser in both modes. See [manual.md](manual.md) for use and [design.md](design.md) for the architecture and history.
 
 ## Requirements
 
@@ -95,16 +95,23 @@ No `.env`, database, API key or application account is required. Current setting
 
 | Setting | Current value and location |
 | --- | --- |
-| Listen address | `127.0.0.1` in `server.mjs`. |
-| Port | `3210` in `server.mjs`. |
+| Listen address | `0.0.0.0` by default (all IPv4 interfaces); override with `HOST`. |
+| Port | `3210` by default; override with `PORT`. |
 | Launcher URL | `http://127.0.0.1:3210` in `Start.bat`. |
 | File/image limits | 50 MB / 40 million image pixels in `app.js`. |
 | PDF rendering | Scale 2, reduced for exceptionally large pages, in `app.js`. |
 | Document storage | Browser memory during use; downloads saved through the browser. |
 
-Keep the loopback listening address for local deployment. There is no reason to open an inbound firewall port for another computer. No administrator elevation is required to listen on this local port.
+For local-only deployment, bind to loopback before starting:
 
-There is currently no `PORT` environment-variable setting. If IT changes the port, it must update the server listener, server message and launcher URL, and use the corresponding browser address. Automated browser tests also use port 3210 and need adjustment for a changed port.
+```powershell
+$env:HOST = '127.0.0.1'
+node server.mjs
+```
+
+For shared use, the default `0.0.0.0` listener allows connections from other computers when the firewall and routing permit them. Ordinary server startup does not require administrator elevation; changing Windows firewall rules may require IT/admin rights.
+
+To select another port, set `$env:PORT = '3211'` and run `node server.mjs`. The printed URLs use that port. `Start.bat` still opens port 3210, so use direct Node startup and the correct browser URL for a custom port, or have IT adjust the launcher. Automated browser tests assume port 3210 unless their test URL is configured.
 
 ### Registry, proxy and certificates
 
@@ -120,9 +127,39 @@ Configure only the settings actually required by your network. These modify the 
 
 ## Concurrent use across an organisation
 
-### Recommended: local copies on user computers
+### Shared host concurrent use
 
-Install the same approved version on each workstation. Each user starts their local app and opens `http://127.0.0.1:3210` on their own computer. All users can work concurrently because the processes, browser state and document memory are independent. Port 3210 can be used on every workstation without conflict between computers.
+1. Install the application and dependencies on one approved host using the GitHub instructions above. Client computers do not need Node.js or a source checkout.
+2. Start with `node server.mjs` or **Start.bat**. The default listener is `0.0.0.0:3210`. Keep the host running, awake and connected.
+3. Run `ipconfig` on the host. Find the IPv4 address of the connected Ethernet/Wi-Fi adapter, for example `192.168.1.25`. The server also prints its non-loopback IPv4 URLs. VPN and virtual adapters can produce extra addresses; choose the address that client computers can reach.
+4. Users enter `http://192.168.1.25:3210` in their browser address bar, substituting the real address. `http://127.0.0.1:3210` works only on the host. An internal DNS hostname supplied by IT can be used instead of the IP address.
+5. Allow inbound TCP 3210 through the host firewall for the intended organisational network. Confirm that routing, endpoint rules and Wi-Fi isolation permit clients to reach the host.
+
+An example Windows firewall rule, to be reviewed and run by IT in an elevated PowerShell window on an approved Private network:
+
+```powershell
+New-NetFirewallRule -DisplayName 'Image Obfuscator internal access' -Direction Inbound -Action Allow -Protocol TCP -LocalPort 3210 -Profile Private -RemoteAddress LocalSubnet
+```
+
+This example permits the local subnet on the Private profile only. Domain deployments or routed subnets need IT to choose the correct profile and approved address range. See Microsoft's [New-NetFirewallRule reference](https://learn.microsoft.com/en-us/powershell/module/netsecurity/new-netfirewallrule) for these settings. Do not enable Public-profile access or router internet port forwarding for this deployment. No firewall changes are automatically made by the app.
+
+Every client has independent browser memory and state. Documents, selections and downloads are not uploaded or shared through the server. The shared host serves assets and receives small session heartbeats; image/PDF processing runs on client machines. There is no document locking, shared processing queue or cross-user collaboration. No maximum supported user count has been established by load testing.
+
+For a stable URL, reserve the host address through DHCP or publish an internal DNS name using your IT network process. The host is a single availability dependency: stopping it prevents new loads and required asset/API requests. It does not automatically start as a Windows service. If service management is required, IT must configure and verify that separately.
+
+### Admin portal and session information
+
+On the host open `http://127.0.0.1:3210/admin`. The portal and its `/api/sessions` data endpoint reject connections from non-loopback addresses. Remote administration is not implemented; use an approved remote-desktop session to the host if appropriate. Host-local users can view the portal without a separate login.
+
+The table groups browser sessions by the network address observed from the TCP connection, with tab counts, first connection, last contact and browser user-agent information. Browser tabs generate separate random session identifiers and send a heartbeat about every 15 seconds. The admin view refreshes every 5 seconds. Closing a tab sends a best-effort disconnect; missing heartbeats expire after 60 seconds. Browser sleep, background throttling or a network interruption can make an open tab disappear temporarily. The server retains at most 2,000 active session entries.
+
+This is an active connection view, not a historical audit log or verified machine/user inventory. Device names are not resolved. Addresses may be shared by NAT/proxies, and forwarded address headers are not trusted. No filenames, page selections or document content are sent. Records are held only in server memory and reset on restart. Tell users that connection metadata is visible to host administrators and apply the organisation's normal privacy policy.
+
+The supplied shared application uses HTTP and has no application login. Deploy it on a trusted, IT-approved internal network. Keep the Node listener directly exposed only to that approved network. For HTTPS, identity-based access or a reverse proxy, IT must design and verify those controls; proxy traffic appearing to originate on loopback must be prevented from reaching `/admin`, `/admin.js` and `/api/sessions`, or it would bypass the direct-connection restriction. Those controls are not provided by this server.
+
+### Alternative: local copies on user computers
+
+Install the same approved version on each workstation and use `HOST=127.0.0.1` for local-only access. Each user starts their local app and opens `http://127.0.0.1:3210` on their own computer. All users can work concurrently because the processes, browser state and document memory are independent. Port 3210 can be used on every workstation without conflict between computers.
 
 There is no shared server workload for document processing. Practical capacity depends on each workstation's browser and memory, particularly for large PDFs. This project has not established a maximum supported number of organisational users through load testing.
 
@@ -138,11 +175,11 @@ There is no shared server workload for document processing. Practical capacity d
 
 Multiple browser tabs on one computer also have separate sessions. They can share one running local server, but do not synchronise selections. Starting a second server on that same machine normally fails because port 3210 is already occupied. On terminal-server/shared-machine installations, browser sessions remain separate but the listener can be reached by other local users; treat that as a shared-host deployment requiring IT assessment.
 
-### Shared web hosting is a separate deployment
+### Hosting beyond the supplied internal server
 
-The supplied server binds to loopback, so colleagues cannot access your workstation's app over the LAN. Sharing a link to `127.0.0.1` sends each colleague to their own computer, not yours.
+The supplied server now supports shared internal-network access as described above. Internet hosting, authenticated reverse-proxy access and HTTPS are separate deployment work. Sharing a link to `127.0.0.1` still sends each colleague to their own computer, not yours.
 
-A central static hosting deployment could serve the interface and PDF libraries while leaving document processing in each browser, but it is not supplied or verified here. IT would need to configure hosting, HTTPS, organisational access controls, all library/worker/font/WASM paths and MIME types, and browser compatibility. Application authentication, audit logging, central processing, saved projects and collaboration are not implemented. Do not describe a change to `0.0.0.0` alone as a complete multi-user service.
+A different hosting platform could serve the interface and PDF libraries while leaving document processing in each browser. IT would need to configure hosting, HTTPS, organisational access controls, library/worker/font/WASM paths and MIME types, and the presence/admin endpoints if session monitoring is retained. Application authentication, historical audit logging, central document processing, saved projects and collaboration are not implemented.
 
 ## Offline and managed distribution
 

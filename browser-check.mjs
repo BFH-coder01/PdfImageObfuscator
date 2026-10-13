@@ -10,7 +10,7 @@ try {
   const page = await browser.newPage({ viewport: { width: 1280, height: 1000 } });
   const errors = [];
   page.on('pageerror', error => errors.push(error.message));
-  await page.goto('http://127.0.0.1:3210');
+  await page.goto(process.env.APP_TEST_URL || 'http://127.0.0.1:3210');
   assert.equal(await page.locator('#obfuscate').isDisabled(), true);
   // Generate a deterministic image with opaque color, text and transparency.
   const png = await page.evaluate(() => {
@@ -159,6 +159,16 @@ try {
   await page.locator('#file').setInputFiles({name:'image-again.png',mimeType:'image/png',buffer:Buffer.from(png,'base64')});
   await page.waitForFunction(() => document.querySelector('#pages').hidden && !document.querySelector('#obfuscate').disabled);
   assert.equal(await page.locator('#download').textContent(),'Download PNG');
+  const otherContext = await browser.newContext();
+  const otherUser = await otherContext.newPage();
+  await otherUser.goto(process.env.APP_TEST_URL || 'http://127.0.0.1:3210');
+  const admin = await browser.newPage();
+  await admin.goto('http://127.0.0.1:3210/admin');
+  await admin.waitForFunction(() => Number(document.querySelector('#sessions').textContent.split(' ')[0]) >= 2);
+  assert.ok(await admin.locator('#rows tr').count() >= 1);
+  await admin.screenshot({path:'verification/admin.png',fullPage:true});
+  await otherContext.close();
+  await admin.close();
   assert.deepEqual(errors, []);
-  console.log('PASS: image workflow; PDF obfuscation applies only to current page, untouched pages export with identical pixels, selections alone do not obfuscate, explicit blackout and independent editing persist; no browser errors.');
+  console.log('PASS: image workflow; per-page PDF obfuscation and exports; two independent browser sessions displayed in the admin portal; no browser errors.');
 } finally { await browser.close(); }

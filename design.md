@@ -43,7 +43,7 @@ The original image-only implementation had no third-party dependencies. PDF supp
 ```mermaid
 flowchart LR
     A[Local image or PDF] --> B[Browser memory]
-    S[Node server on 127.0.0.1:3210] --> U[Browser interface and local PDF libraries]
+    S[Node server on the host network address] --> U[Browser interface and host-served PDF libraries]
     U --> B
     B --> C[Image or rendered PDF page]
     C --> D[SVG keep-visible rectangles]
@@ -51,6 +51,8 @@ flowchart LR
     E --> F[PNG download]
     E --> G[New PDF of page images]
     C --> G
+    U --> H[Session heartbeat without document data]
+    H --> I[Host-only admin portal]
 ```
 
 The last connection represents PDF pages that have not been obfuscated: their original rendered appearance is included in the download. The Node process serves application files and bundled libraries. The app does not send selected documents to that process; PDF parsing, selection state, pixel processing and output creation occur in the browser. The server has no document database or upload endpoint.
@@ -59,7 +61,10 @@ The last connection represents PDF pages that have not been obfuscated: their or
 
 | File | Responsibility |
 | --- | --- |
-| `server.mjs` | Serve a fixed set of application assets and PDF resources on the local loopback address. |
+| `server.mjs` | Serve application/PDF assets, track active sessions and restrict admin access to loopback. |
+| `presence.js` | Send per-tab heartbeats containing only a session identifier. |
+| `admin.html`, `admin.js` | Display active machine addresses and browser sessions on the host. |
+| `server.test.mjs` | Check session lifecycle, network access and admin restrictions. |
 | `index.html`, `style.css` | Interface, controls and responsive layout. |
 | `app.js` | Loading, PDF rendering, page state, pointer selection, previews and exports. |
 | `geometry.mjs` | Clamp rectangles to source bounds and compose blacked-out output. |
@@ -84,8 +89,14 @@ Rectangles are clamped to the source bounds and rounded inward to whole pixels. 
 
 Verification has covered Windows, Node.js 24 and Microsoft Edge. Unit tests check reverse dragging, inward rounding, black-first rendering and full blackout with no selections. Browser checks cover image loading and export, every unselected image pixel, PDF page state, navigation, independent editing, and exported PDF page sizes. They also check that untouched PDF pages export with identical raster pixels and that selections alone do not obfuscate a page. Exported PDFs were reopened and their rendered pages visually inspected.
 
-This is a local document tool, not a multi-user records system. There is no login, shared queue, collaboration, saved selection project, audit trail or central retention policy. Loading another file, refreshing or closing the tab loses in-memory work. Browser and device management remain the organisation's responsibility. Local processing does not prevent browser extensions, endpoint software or synced download folders from accessing files.
+This is a browser document tool with shared internal hosting and active session monitoring, not a multi-user records system. There is no login, shared queue, collaboration, saved selection project, historical audit trail or central retention policy. Loading another file, refreshing or closing the tab loses in-memory work. Browser and device management remain the organisation's responsibility. Browser processing does not prevent browser extensions, endpoint software or synced download folders from accessing files.
 
 ## Future work, separate from current delivery
 
-Possible extensions include movable/resizable selections, zoom controls, saved projects, batch processing and an explicit document-level review summary. A shared hosted service would need its own deployment and access-control design; changing the listening address alone would not deliver those organisational controls. These features are not implemented.
+Possible extensions include movable/resizable selections, zoom controls, saved projects, batch processing and an explicit document-level review summary. Internet hosting, HTTPS and identity-based access need additional deployment and access-control design. These features are not implemented.
+
+## Shared-host revision
+
+The user subsequently requested simple instructions for colleagues to connect to the host's IP address, and an admin portal showing connected machines. The default Node listener now binds to `0.0.0.0`, with optional `HOST` and `PORT` settings. Startup prints candidate IPv4 URLs. Users can connect from separate machines while retaining independent browser-based processing.
+
+An additional `presence.js` module sends a per-tab random identifier to the host every 15 seconds, without document information. The server records the socket address, user-agent and first/last contact in memory. `/admin` groups active tabs by observed address and refreshes every 5 seconds. Sessions expire after 60 seconds without contact. The admin page and data endpoint allow direct loopback connections only; they are not remotely accessible. This is approximate active presence, not machine authentication or a historical audit log. Proxy/NAT addresses and sleeping browsers limit its interpretation.
