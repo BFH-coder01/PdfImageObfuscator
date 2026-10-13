@@ -1,5 +1,11 @@
 # Image Obfuscator
 
+## Documentation
+
+- [User manual](manual.md): selecting areas, processing individual PDF pages and saving results.
+- [Setup guide](setup.md): GitHub installation, prerequisites, configuration and concurrent organisational use.
+- [Design history](design.md): decisions, architecture, development stages and verification.
+
 A small local application: load an image or PDF, draw rectangles to keep visible, and black out everything else. Files are processed in browser memory and never uploaded. PDF.js and PDF-LIB are installed locally for PDF rendering and export; no external services are used during processing.
 
 ## Start
